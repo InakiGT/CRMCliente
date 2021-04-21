@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState} from 'react';
 import Layout from '../components/Layout';
 import {gql, useMutation} from '@apollo/client';
 import {useFormik} from 'formik';
@@ -18,13 +18,41 @@ const NUEVO_CLIENTE = gql`
     }
 `;
 
+const OBTENER_CLIENTES_USUARIO = gql`
+  query obtenerClientesVendedor {
+    obtenerClientesVendedor {
+      id
+      nombre
+      apellido
+      empresa
+      email
+    }
+  }
+`;
+
 const NuevoCliente = () => {
 
     //Router
     const router = useRouter();
 
+    //State del mensaje de error
+    const [mensaje, setMensaje] = useState(null);
+
     //Mutation para crear clientes
-    const [nuevoCliente] = useMutation(NUEVO_CLIENTE);
+    const [nuevoCliente] = useMutation(NUEVO_CLIENTE, {
+        update(cache, {data: {nuevoCliente}}) { //Actualiza cuando se ejecuta el mutation
+            //Obtener el objeto a actualizar del cache
+            const {obtenerClientesVendedor} = cache.readQuery({query: OBTENER_CLIENTES_USUARIO});
+
+            //Reescribir el cache
+            cache.writeQuery({
+                query: OBTENER_CLIENTES_USUARIO, //Lo que se va a actualizar
+                data: {
+                    obtenerClientesVendedor : [...obtenerClientesVendedor, nuevoCliente]
+                }
+            })
+        } 
+    });
 
     const formik = useFormik({
         initialValues: {
@@ -58,14 +86,28 @@ const NuevoCliente = () => {
                 router.push('/'); //Redireccionar hacía clientes
 
             } catch (error) {
-                console.log(error);
+                setMensaje(error.message.replace('GraphQL error: ', ''));
+
+                setTimeout(() => {
+                    setMensaje(null);
+                }, 3000)
             }
         }
     });
 
+    const mostrarMensaje = () => {
+        return (
+            <div className="bg-white py-2 px-3 w-full my-3 max-w-sm text-center mx-auto">
+                <p>{mensaje}</p>
+            </div>
+        );
+    }
+
     return ( 
         <Layout>
             <h1 className="text-3xl text-gray-800 font-light">Nuevo Cliente</h1>
+
+            {mensaje && mostrarMensaje()}
 
             <div className="flex justify-center mt-5">
                 <div className="w-full max-w-lg">
