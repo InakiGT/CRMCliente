@@ -1,51 +1,48 @@
 import React from 'react';
 import Swal from 'sweetalert2';
 import {gql, useMutation} from '@apollo/client';
-import Router from 'next/router';
 
 
-const ELIMINAR_CLIENTE = gql`
-    mutation eliminarCliente($id: ID!) {
-        eliminarCliente(id: $id)
+const ELIMINAR_PRODUCTO = gql`
+    mutation eliminarProducto($id: ID!) {
+        eliminarProducto(id: $id)
     }
 `;
 
-
-const OBTENER_CLIENTES_USUARIO = gql`
-    query obtenerClientesVendedor {
-        obtenerClientesVendedor {
+const OBTENER_PRODUCTOS = gql`
+    query obtenerProductos {
+        obtenerProductos {
             id
             nombre
-            apellido
-            empresa
-            email
+            precio
+            existencia
         }
     }
 `;
 
-const Cliente = ({cliente}) => {
+const Producto = ({producto}) => {
 
-    //Mutation para eliminar cliente
-    const [eliminarCliente] = useMutation(ELIMINAR_CLIENTE, {
-        update(cache) { //Sin datos nuevos porque se eliminará
-            //Obtener una copia del objeto de cache
-            const {obtenerClientesVendedor} = cache.readQuery({query: OBTENER_CLIENTES_USUARIO});
+    //Mutation para eliminar productos
+    const [eliminarProducto] = useMutation(ELIMINAR_PRODUCTO, {
+        update(cache) {
+            const {obtenerProductos} = cache.readQuery({
+                query: OBTENER_PRODUCTOS
+            });
 
-            //Reescribir el cache
             cache.writeQuery({
-                query: OBTENER_CLIENTES_USUARIO,
+                query: OBTENER_PRODUCTOS,
                 data: {
-                    obtenerClientesVendedor : obtenerClientesVendedor.filter(clienteAct => clienteAct.id !== id)
+                    obtenerProductos: obtenerProductos.filter(productoAct => productoAct.id !== id)
                 }
             })
         }
     });
 
-    
-    //Elimina un cliente
-    const confirmarEliminarCliente = () => {
+    const {nombre, precio, existencia, id} = producto;
+
+    const confirmarEliminarProductos = () => {
         Swal.fire({
-            title: 'Estás seguro de eliminar el cliente?',
+            title: 'Estás seguro de eliminar este producto?',
             text: "Esta acción no se puede deshacer",
             icon: 'warning',
             showCancelButton: true,
@@ -58,8 +55,7 @@ const Cliente = ({cliente}) => {
 
                 try {
 
-                    //Eliminar por id
-                    const {data} = await eliminarCliente({
+                    const {data} = await eliminarProducto({
                         variables: {
                             id
                         }
@@ -68,53 +64,43 @@ const Cliente = ({cliente}) => {
                     //Mostrar alerta
                     Swal.fire(
                         'Eliminado!',
-                         data.eliminarCliente,
+                         data.eliminarProducto,
                         'success'
                     );
 
                 } catch (error) {
-                    console.log(error);
+                    
                 }
             }
           })
     }
-
-    const editarCliente = () => {
-        Router.push({
-            pathname: "/editarcliente/[id]",
-            query: {id}
-        })
-    }
-
-    const {nombre, apellido, empresa, email, id} = cliente;
-
     return ( 
         <tr>
-              <td className="border px-4 py-2">{nombre} {apellido}</td>
-              <td className="border px-4 py-2">{empresa}</td>
-              <td className="border px-4 py-2">{email}</td>
-              <td className="border px-4 py-2">
-                  <button
+            <td className="border px-4 py-2">{nombre}</td>
+            <td className="border px-4 py-2">{existencia} Piezas</td>
+            <td className="border px-4 py-2">${precio}</td>
+            <td className="border px-4 py-2">
+                <button
                     type="button"
                     className="flex justify-center items-center bg-red-800 py-2 px-4 w-full text-white rounded text-xs uppercase font-bold"
-                    onClick={() => {confirmarEliminarCliente()}}
+                    onClick={() => {confirmarEliminarProductos()}}
                   >Eliminar
 
                       <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                   </button>
-              </td>
-              <td className="border px-4 py-2">
-                  <button
+            </td>
+            <td className="border px-4 py-2">
+                <button
                     type="button"
                     className="flex justify-center items-center bg-green-600 py-2 px-4 w-full text-white rounded text-xs uppercase font-bold"
-                    onClick={() => {editarCliente()}}
+                    //onClick={() => {editarCliente()}}
                   >Editar
     
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                   </button>
-              </td>
+            </td>
         </tr>
      );
 }
  
-export default Cliente;
+export default Producto;
