@@ -3,8 +3,51 @@ import Layout from '../components/Layout';
 import {useFormik} from 'formik';
 import * as Yup from 'yup';
 import {gql, useMutation} from '@apollo/client';
+import {useRouter} from 'next/router';
+import Swal from 'sweetalert2';
+
+
+const NUEVO_PRODUCTO = gql`
+    mutation nuevoProducto($input: ProductoInput) {
+        nuevoProducto(input: $input) {
+            id
+            nombre
+            existencia
+            precio
+        }
+    }
+`;
+
+const OBTENER_PRODUCTOS = gql`
+    query obtenerProductos {
+        obtenerProductos {
+            id
+            nombre
+            precio
+            existencia
+        }
+    }
+`;
 
 const NuevoProducto = () => {
+    //Routing
+    const router = useRouter();
+
+    //Mutation de apollo
+    const [nuevoProducto] = useMutation(NUEVO_PRODUCTO, {
+        update(cache, { data: { nuevoProducto } }) {
+            //Obtener de cache
+            const {obtenerProductos} = cache.readQuery({query: OBTENER_PRODUCTOS});
+
+            //Reescribir el objeto
+            cache.writeQuery({
+                query: OBTENER_PRODUCTOS,
+                data: {
+                    obtenerProductos: [...obtenerProductos, nuevoProducto]
+                }
+            })
+        }
+    });
 
     //Formulario para los productos
     const formik = useFormik({
@@ -18,8 +61,34 @@ const NuevoProducto = () => {
             existencia: Yup.number().required('La cantidad disponible no puede ir vacía').positive('No se aceptan números negativos').integer('La existencia debe ser en números enteros'),
             precio: Yup.number().required('El precio no puede ir vacío').positive('No se aceptan números negativos')
         }),
-        onSubmit: valores => {
-            
+        onSubmit: async valores => {
+
+            const {nombre, existencia, precio} = valores;
+
+            try {
+                const {data} = await nuevoProducto({
+                    variables: {
+                        input: {
+                            nombre,
+                            existencia,
+                            precio
+                        }
+                    }
+                });
+
+                //Mostrar una alerta
+                Swal.fire(
+                    'Creado',
+                    'Producto creado correctamente',
+                    'success'
+                );
+
+                //Redireccionar a productos
+                router.push('/productos');
+
+            } catch (error) {
+                console.log(error);
+            }
         }
     })
 
@@ -29,7 +98,7 @@ const NuevoProducto = () => {
             <div className="flex justify-center mt-5">
                 <div className="w-full max-w-lg">
                     <form className="bg-white shadow-md px-8 pt-6 pb-8 mb-4"
-                                //onSubmit={formik.handleSubmit}
+                                onSubmit={formik.handleSubmit}
                             >
                             <div className="mb-4">
                                 <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="nombre">
