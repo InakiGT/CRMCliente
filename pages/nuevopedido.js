@@ -1,7 +1,6 @@
 import React, {useState, useEffect, useContext} from 'react';
 import Layout from '../components/Layout';
 import AsignarCliente from '../components/pedidos/AsignarCliente';
-import PedidoContext from '../context/pedidos/PedidoContext';
 
 //Context de pedidos
 import PedidoContext from '../context/pedidos/PedidoContext';
