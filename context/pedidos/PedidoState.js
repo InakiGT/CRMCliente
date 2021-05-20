@@ -27,10 +27,27 @@ const PedidoState = ({children}) => {
     }
 
     //Modifica los productos
-    const agregarProducto = producto => {
+    const agregarProducto = productoSeleccionado => {
+
+        let nuevoState;
+
+        if(state.productos.length > 0) {
+            //Tomar del segundo arreglo, una copia para asignarlo al primero
+            nuevoState = productoSeleccionado.map(producto => {
+                const nuevoObjeto = state.productos.find(productoState => productoState.id === producto.id);
+            
+                return {
+                    ...producto,
+                    ...nuevoObjeto
+                }
+            });
+        } else {
+            nuevoState = productoSeleccionado;
+        }
+
         dispatch({
             type: SELECCIONAR_PRODUCTO,
-            payload: producto
+            payload: nuevoState
         })
     }
 
