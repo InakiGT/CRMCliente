@@ -1,21 +1,100 @@
 import React, {useState, useEffect} from 'react';
+import {gql, useMutation} from '@apollo/client';
+import Swal from 'sweetalert2';
+
+const ACTUALIZAR_PEDIDO = gql`
+    mutation actualizarPedido($id: ID!, $input: PedidoInput) {
+        actualizarPedido(id: $id, input: $input) {
+            estado
+        }
+    }
+`;
+
+const ELIMINAR_PEDIDO = gql`
+    mutation eliminarPedido($id: ID!) {
+        eliminarPedido(id: $id)
+    }
+`;
 
 const Pedido = ({pedido}) => {
 
-    const {id, total, cliente: {nombre, apellido, telefono, email}, estado} = pedido; 
+    const {id, total, cliente: {nombre, apellido, telefono, email}, estado, cliente} = pedido; 
+
+    //Mutation para cambiar el estado de un pedido
+    const [actualizarPedido] = useMutation(ACTUALIZAR_PEDIDO);
+    const [eliminarPedido] = useMutation(ELIMINAR_PEDIDO);
 
     const [estadoPedido, setEstadoPedido] = useState(estado);
+    const [clase, setClase] = useState('');
 
     useEffect(() => {
         if(estadoPedido) {
             setEstadoPedido(estadoPedido);
         }
+        clasePedido();
     }, [estadoPedido]);
 
-    console.log(pedido);
+    //Función que modifica el color del pedido deacuerdo a su estado
+    const clasePedido = () => {
+        if(estadoPedido === 'PENDIENTE') {
+            setClase('border-yellow-500');
+        } else if(estadoPedido === 'COMPLETADO') {
+            setClase('border-green-500');
+        } else {
+            setClase('border-red-800');
+        }
+    }
+
+    const cambiarEstadoPedido = async nuevoEstado => {
+        try {
+            const {data} = await actualizarPedido({
+                variables: {
+                    id,
+                    input: {
+                        estado: nuevoEstado,
+                        cliente: cliente.id
+                    }
+                }
+            });
+            setEstadoPedido(data.actualizarPedido.estado);
+        } catch (error) {
+            console.log(error);
+        }
+    }
+
+    const confirmarEliminarPedido = () => {
+        Swal.fire({
+            title: '¿Desea eliminar este pedido?',
+            text: 'Un pedido eliminado no se puede recuperar',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Si, Eliminar',
+            cancelButtonText: 'No, Cancelar'
+        }).then(async (result) => {
+            if(result.value) {
+                try {
+                    const data = await eliminarPedido({
+                        variables: {
+                            id
+                        }
+                    });
+
+                    Swal.fire(
+                        'Eliminado',
+                        data.eliminarPedido,
+                        'success'
+                    );
+                } catch (error) {
+                    console.log(error);
+                }
+            }
+        })
+    }
 
     return ( 
-        <div className="mt-4 bg-white rounded p-6 md:grid md:grid-cols-2 md:grap-4 shadow-lg">
+        <div className={`${clase} border-t-4 mt-4 bg-white rounded p-6 md:grid md:grid-cols-2 md:grap-4 shadow-lg`}>
             <div>
                 <p className="font-bold text-gray-800">Cliente: {nombre} {apellido}</p>
 
@@ -37,6 +116,7 @@ const Pedido = ({pedido}) => {
                 <select
                     className="mt-2 appearance-none bg-blue-600 border border-blue-600 text-white p-2 text-center rounded leading-tight focus:outline-none focus:bg-blue-600 focus:border-blue-500 uppercase text-xs font-bold"
                     value={estadoPedido}
+                    onChange={e => cambiarEstadoPedido(e.target.value)}
                 >
                     <option value="COMPLETADO">Completado</option>
                     <option value="PENDIENTE">Pendiente</option>
@@ -59,6 +139,7 @@ const Pedido = ({pedido}) => {
                 </p>
                 <button
                     className="uppercase text-xs font-bold flex items-center mt-4 bg-red-800 px-5 py-2 inline-block text-white rounded leading-tight"
+                    onClick={() => confirmarEliminarPedido()}
                 >
                     Eliminar Pedido
                     <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
