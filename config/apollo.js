@@ -3,7 +3,7 @@ import {setContext} from 'apollo-link-context';
 import fetch from 'node-fetch';
 
 const httpLink = createHttpLink({
-    uri: 'http://localhost:4000/',
+    uri: 'https://whispering-woodland-63446.herokuapp.com/',
     fetch
 });
 
