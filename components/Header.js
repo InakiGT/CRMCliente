@@ -13,6 +13,7 @@ const OBTENER_USUARIO = gql`
 `;
 
 const Header = () => {
+    const router = useRouter();
 
     const {data, loading, error} = useQuery(OBTENER_USUARIO);
 
@@ -25,16 +26,14 @@ const Header = () => {
 
     const {nombre, apellido} = data.obtenerUsuario;
 
-    const router = useRouter();
-
     const cerrarSesion = () => {
         localStorage.removeItem('token');
         router.push('/login');
     }
 
     return ( 
-        <div className="flex justify-between mb-6">
-                <p className="mr-2">Hola: {`${nombre} ${apellido}`}</p>
+        <div className="sm:flex justify-between mb-6">
+                <p className="mr-2 mb-5 lg:mb-0">Hola: {`${nombre} ${apellido}`}</p>
 
             <button
                 onClick={cerrarSesion}

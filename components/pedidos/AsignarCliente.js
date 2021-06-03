@@ -26,13 +26,13 @@ const AsignarCliente = () => {
 
     const {data, loading, error} = useQuery(OBTENER_CLIENTES_USUARIO);
 
-    if(loading) return 'Cargando...';
-
-    const {obtenerClientesVendedor} = data;
-
     useEffect(() => {
         agregarCliente(cliente);
     }, [cliente]);
+
+    if(loading) return 'Cargando...';
+
+    const {obtenerClientesVendedor} = data;
 
     const seleccionarCliente = client => {
         setCliente(client);
